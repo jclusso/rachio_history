@@ -32,4 +32,12 @@ class Event < ApplicationRecord
   def run_started_at
     occurred_at - duration_seconds.to_i
   end
+
+  # Best display name for the zone: the linked zone, or the (possibly
+  # truncated) name Rachio put in the summary for zones since renamed/deleted.
+  def zone_label
+    zone&.name ||
+      summary.to_s[/\A(.+?)(?:\.{2,3})?\s+(?:began|completed|stopped|watered)/, 1] ||
+      "Unknown zone"
+  end
 end

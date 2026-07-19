@@ -1,5 +1,6 @@
 class ControllersController < ApplicationController
   before_action :set_controller, only: [ :show, :destroy, :sync, :backfill, :history, :calendar, :day ]
+  around_action :in_controller_timezone, only: [ :show, :history, :calendar, :day ]
 
   def index
     @controllers = Controller.order(:name)
@@ -78,5 +79,9 @@ class ControllersController < ApplicationController
 
   def set_controller
     @controller_record = @controller = Controller.find(params[:id])
+  end
+
+  def in_controller_timezone(&block)
+    Time.use_zone(@controller.timezone.presence || Time.zone, &block)
   end
 end

@@ -6,13 +6,13 @@
 
   <div class="max-h-[70vh] overflow-y-auto p-5">
     <h3 class="mb-2 text-sm font-semibold uppercase tracking-wider text-gray-500">Zones watered</h3>
-    <% by_zone = @runs.group_by(&:zone) %>
+    <% by_zone = @runs.group_by { |run| [ run.zone, run.zone_label ] } %>
     <% if by_zone.any? %>
       <table class="mb-6 min-w-full divide-y divide-gray-200 text-sm">
         <tbody class="divide-y divide-gray-100">
-          <% by_zone.each do |zone, runs| %>
+          <% by_zone.each do |(zone, label), runs| %>
             <tr>
-              <td class="py-2 pr-4 font-medium"><%= zone ? link_to(zone.name, zone, data: { turbo_frame: "_top" }, class: "text-emerald-700 hover:underline") : "Unknown zone" %></td>
+              <td class="py-2 pr-4 font-medium"><%= zone ? link_to(zone.name, zone, data: { turbo_frame: "_top" }, class: "text-emerald-700 hover:underline") : tag.span("#{label} (former zone)", class: "text-gray-600") %></td>
               <td class="py-2 pr-4 whitespace-nowrap text-gray-500"><%= runs.map { |r| r.run_started_at.strftime("%l:%M%P").strip }.join(", ") %></td>
               <td class="py-2 text-right font-semibold whitespace-nowrap"><%= duration_in_words(runs.sum { |r| r.duration_seconds.to_i }) %></td>
             </tr>

@@ -1,20 +1,36 @@
 <p class="mb-4 text-sm"><%= link_to "← #{@zone.controller.name}", @zone.controller, class: "text-emerald-700 hover:text-emerald-800 hover:underline" %></p>
 
-<header class="mb-2 flex items-center gap-3">
+<header class="mb-2 flex flex-wrap items-center gap-3" data-controller="modal">
   <h1 class="text-2xl font-bold tracking-tight">Zone <%= @zone.number %>: <%= @zone.name %></h1>
   <%= boolean_badge @zone.enabled? %>
+  <% if @zone.zone_aliases.any? %>
+    <button type="button" data-action="modal#open" class="cursor-pointer rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 shadow-sm hover:bg-gray-50">
+      Aliases (<%= @zone.zone_aliases.count %>)
+    </button>
+
+    <dialog data-modal-target="dialog" data-action="click->modal#backdropClose"
+            class="m-auto w-full max-w-lg rounded-lg p-0 shadow-xl backdrop:bg-gray-900/50">
+      <div class="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+        <h2 class="text-lg font-semibold">Former names</h2>
+        <button type="button" data-action="modal#close" class="rounded-md px-2 py-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600">✕</button>
+      </div>
+      <div class="p-5">
+        <p class="mb-4 text-sm text-gray-500">Historical events with these names are linked to this zone. Removing an alias unassigns its events.</p>
+        <ul class="divide-y divide-gray-100">
+          <% @zone.zone_aliases.each do |zone_alias| %>
+            <li class="flex items-center justify-between gap-4 py-2.5 text-sm">
+              <span class="font-medium text-gray-800"><%= zone_alias.name %></span>
+              <span class="ml-auto whitespace-nowrap text-gray-400"><%= number_with_delimiter zone_alias.linked_events_count %> events</span>
+              <%= button_to "Remove", zone_alias_path(zone_alias), method: :delete,
+                    class: "cursor-pointer rounded-md border border-red-200 bg-white px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50",
+                    data: { turbo_confirm: "Remove “#{zone_alias.name}” and unassign its #{zone_alias.linked_events_count} events?" } %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    </dialog>
+  <% end %>
 </header>
-<% if @zone.zone_aliases.any? %>
-  <p class="mb-2 text-sm text-gray-500">Also known as:
-    <% @zone.zone_aliases.each do |zone_alias| %>
-      <span class="mr-1 inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
-        <%= zone_alias.name %>
-        <%= button_to "✕", zone_alias_path(zone_alias), method: :delete, form_class: "inline", class: "cursor-pointer text-gray-400 hover:text-red-600",
-              data: { turbo_confirm: "Remove this alias? Its #{zone_alias.zone.controller.events.where(zone_id: @zone.id).where('summary LIKE ?', "#{ZoneAlias.sanitize_sql_like(zone_alias.name)}%").count} linked events will be unassigned." } %>
-      </span>
-    <% end %>
-  </p>
-<% end %>
 <p class="mb-6 text-sm text-gray-600">
   Last watered: <%= @zone.last_watered_at&.strftime("%b %-d, %Y %l:%M %p") || "never" %> ·
   Total recorded watering: <%= number_with_delimiter @zone.total_run_minutes %> minutes

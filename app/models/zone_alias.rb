@@ -6,6 +6,10 @@ class ZoneAlias < ApplicationRecord
 
   validates :name, presence: true, uniqueness: { scope: :zone_id }
 
+  def linked_events_count
+    zone.events.where("summary LIKE ? OR summary LIKE ?", "#{self.class.sanitize_sql_like(name)}%", "Soaking #{self.class.sanitize_sql_like(name)}%").count
+  end
+
   # Undo the alias: unlink the events it claimed, then remove it.
   def release!
     pattern = "#{self.class.sanitize_sql_like(name)}%"

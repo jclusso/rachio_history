@@ -36,6 +36,12 @@ module RachioSyncable
   def sync_zones(zone_payloads)
     zone_payloads.each do |payload|
       zone = zones.find_or_initialize_by(rachio_id: payload["id"])
+
+      # Zone renamed: keep the old name as an alias so history stays linked.
+      if zone.persisted? && zone.name.present? && payload["name"].present? && zone.name != payload["name"]
+        zone.zone_aliases.find_or_create_by!(name: zone.name)
+      end
+
       zone.assign_attributes(
         name: payload["name"],
         number: payload["zoneNumber"],

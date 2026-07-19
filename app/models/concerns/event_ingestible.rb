@@ -4,7 +4,7 @@ module EventIngestible
 
   # Idempotent: events are keyed by Rachio's event id. Returns count of new events.
   def ingest_events(payloads)
-    zones_by_name = zones.index_by(&:name)
+    zones_by_name = zone_name_lookup
     created = 0
 
     Array(payloads).each do |payload|
@@ -34,6 +34,13 @@ module EventIngestible
   end
 
   private
+
+  # Every name (current or alias) a zone on this controller answers to.
+  def zone_name_lookup
+    zones.includes(:zone_aliases).each_with_object({}) do |zone, lookup|
+      zone.known_names.each { |name| lookup[name] ||= zone }
+    end
+  end
 
   # Zone events don't carry a zone id; match on the zone name Rachio puts
   # in the summary text (e.g. "Back Yard began watering at ..."). Long zone

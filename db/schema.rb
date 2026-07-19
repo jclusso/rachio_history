@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_19_000003) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_19_000004) do
   create_table "controllers", force: :cascade do |t|
     t.datetime "backfill_completed_at"
     t.datetime "backfill_cursor_at"
@@ -51,6 +51,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_000003) do
     t.index ["zone_id"], name: "index_events_on_zone_id"
   end
 
+  create_table "zone_aliases", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.integer "zone_id", null: false
+    t.index ["zone_id", "name"], name: "index_zone_aliases_on_zone_id_and_name", unique: true
+    t.index ["zone_id"], name: "index_zone_aliases_on_zone_id"
+  end
+
   create_table "zones", force: :cascade do |t|
     t.integer "controller_id", null: false
     t.datetime "created_at", null: false
@@ -66,5 +75,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_000003) do
 
   add_foreign_key "events", "controllers"
   add_foreign_key "events", "zones"
+  add_foreign_key "zone_aliases", "zones"
   add_foreign_key "zones", "controllers"
 end

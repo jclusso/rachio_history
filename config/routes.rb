@@ -5,6 +5,7 @@ Rails.application.routes.draw do
     member do
       post :sync
       post :backfill
+      post :claim_zone_label
       get :history
       get :calendar
       get :day

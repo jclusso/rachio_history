@@ -91,6 +91,32 @@
   </table>
 </div>
 
+<% if @unmatched_labels.any? %>
+  <h2 class="mb-1 text-lg font-semibold">Unmatched zone names</h2>
+  <p class="mb-3 text-sm text-gray-600">These names appear in historical events but don't match any current zone (renamed or deleted zones). Assign each to a zone to reunite its history.</p>
+  <div class="mb-8 overflow-x-auto rounded-lg border border-amber-200 bg-amber-50/40 shadow-sm">
+    <table class="min-w-full divide-y divide-amber-100 text-sm">
+      <tbody class="divide-y divide-amber-100">
+        <% all_zones = @controller.zones.ordered %>
+        <% @unmatched_labels.each do |label, count| %>
+          <tr>
+            <td class="px-4 py-2.5 font-medium text-gray-800"><%= label %></td>
+            <td class="px-4 py-2.5 whitespace-nowrap text-gray-500"><%= number_with_delimiter(count) %> events</td>
+            <td class="px-4 py-2.5">
+              <%= form_with url: claim_zone_label_controller_path(@controller), class: "flex items-center gap-2" do |form| %>
+                <%= form.hidden_field :label, value: label %>
+                <%= form.select :zone_id, options_from_collection_for_select(all_zones, :id, :name),
+                      { include_blank: "Assign to zone…" }, required: true, class: "rounded-md border border-gray-300 bg-white px-2 py-1 text-sm shadow-sm" %>
+                <%= form.submit "Link", class: "rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 cursor-pointer" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
 <div class="mb-3 flex items-center justify-between">
   <h2 class="text-lg font-semibold">Recent runs</h2>
   <%= link_to "Full event history →", history_controller_path(@controller), class: "text-sm text-emerald-700 hover:text-emerald-800 hover:underline" %>

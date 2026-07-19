@@ -1,5 +1,5 @@
 class ControllersController < ApplicationController
-  before_action :set_controller, only: [ :show, :destroy, :sync, :backfill, :history, :calendar, :day ]
+  before_action :set_controller, only: [ :show, :destroy, :sync, :backfill, :history, :calendar, :day, :claim_zone_label ]
   around_action :in_controller_timezone, only: [ :show, :history, :calendar, :day ]
 
   def index
@@ -13,6 +13,7 @@ class ControllersController < ApplicationController
     @heatmap_days = @controller.daily_watering_minutes(1.year.ago.to_date..Date.current)
     visible_zone_ids = @zones.ids
     @minutes_by_zone = @controller.minutes_by_zone.select { |zone, _minutes| visible_zone_ids.include?(zone.id) }
+    @unmatched_labels = @controller.events.zone_runs.where(zone_id: nil).map(&:zone_label).tally.sort_by { |_label, count| -count }
     @minutes_by_month = @controller.minutes_by_month
   end
 
@@ -29,6 +30,12 @@ class ControllersController < ApplicationController
     @month = params[:month].present? ? Date.parse("#{params[:month]}-01") : Date.current.beginning_of_month
     @runs_by_day = @controller.watering_runs(@month.beginning_of_month.beginning_of_day..@month.end_of_month.end_of_day)
                               .group_by { |event| event.occurred_at.to_date }
+  end
+
+  def claim_zone_label
+    zone = @controller.zones.find(params[:zone_id])
+    linked = zone.claim_label!(params[:label])
+    redirect_to @controller, notice: "Linked #{linked} events from “#{params[:label]}” to #{zone.name}."
   end
 
   def day

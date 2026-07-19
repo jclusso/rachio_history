@@ -1,5 +1,5 @@
 class ControllersController < ApplicationController
-  before_action :set_controller, only: [ :show, :destroy, :sync, :backfill, :history, :calendar ]
+  before_action :set_controller, only: [ :show, :destroy, :sync, :backfill, :history, :calendar, :day ]
 
   def index
     @controllers = Controller.order(:name)
@@ -7,14 +7,17 @@ class ControllersController < ApplicationController
 
   def show
     @zones = @controller.zones.ordered
+    @zones = @zones.enabled unless params[:show_disabled].present?
     @recent_runs = @controller.watering_runs.limit(20)
     @heatmap_days = @controller.daily_watering_minutes(1.year.ago.to_date..Date.current)
-    @minutes_by_zone = @controller.minutes_by_zone
+    visible_zone_ids = @zones.ids
+    @minutes_by_zone = @controller.minutes_by_zone.select { |zone, _minutes| visible_zone_ids.include?(zone.id) }
     @minutes_by_month = @controller.minutes_by_month
   end
 
   def history
     @zones = @controller.zones.ordered
+    @zones = @zones.enabled unless params[:show_disabled].present? || params[:zone_id].present?
     @events = @controller.events.recent_first.includes(:zone)
     @events = @events.where(zone_id: params[:zone_id]) if params[:zone_id].present?
     @events = @events.zone_runs if params[:runs_only].present?
@@ -25,6 +28,13 @@ class ControllersController < ApplicationController
     @month = params[:month].present? ? Date.parse("#{params[:month]}-01") : Date.current.beginning_of_month
     @runs_by_day = @controller.watering_runs(@month.beginning_of_month.beginning_of_day..@month.end_of_month.end_of_day)
                               .group_by { |event| event.occurred_at.to_date }
+  end
+
+  def day
+    @date = Date.parse(params[:date])
+    range = @date.beginning_of_day..@date.end_of_day
+    @runs = @controller.watering_runs(range).sort_by(&:run_started_at)
+    @day_events = @controller.events.includes(:zone).between(range.begin, range.end).order(:occurred_at)
   end
 
   def new

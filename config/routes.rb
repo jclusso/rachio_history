@@ -7,6 +7,7 @@ Rails.application.routes.draw do
       post :backfill
       get :history
       get :calendar
+      get :day
     end
     collection do
       post :sync_account

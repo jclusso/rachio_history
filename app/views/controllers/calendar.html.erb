@@ -11,14 +11,15 @@
   </div>
 </header>
 
-<div class="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+<div class="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm" data-controller="modal">
   <div class="grid min-w-[56rem] grid-cols-7 border-b border-gray-200 bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500">
     <% %w[Sun Mon Tue Wed Thu Fri Sat].each do |day| %><div class="px-2 py-2"><%= day %></div><% end %>
   </div>
   <div class="grid min-w-[56rem] grid-cols-7 divide-x divide-y divide-gray-100">
     <% (@month.beginning_of_week(:sunday)..@month.end_of_month.end_of_week(:sunday)).each do |day| %>
       <% runs = @runs_by_day[day] || [] %>
-      <div class="min-h-28 p-2 <%= 'bg-gray-50 text-gray-400' unless day.month == @month.month %> <%= 'ring-2 ring-inset ring-emerald-500' if day == Date.current %>">
+      <%= link_to day_controller_path(@controller, date: day), data: { turbo_frame: "day_modal", action: "modal#open" },
+            class: "block min-h-28 p-2 hover:bg-emerald-50/60 cursor-pointer #{'bg-gray-50 text-gray-400' unless day.month == @month.month} #{'ring-2 ring-inset ring-emerald-500' if day == Date.current}" do %>
         <div class="mb-1 flex items-center justify-between text-xs">
           <span class="font-semibold"><%= day.day %></span>
           <% if runs.any? %><span class="text-gray-400"><%= duration_in_words(runs.sum { |r| r.duration_seconds.to_i }) %></span><% end %>
@@ -31,7 +32,14 @@
           <% end %>
           <% if runs.size > 6 %><div class="px-1.5 text-xs text-gray-400">+<%= runs.size - 6 %> more</div><% end %>
         </div>
-      </div>
+      <% end %>
     <% end %>
   </div>
+
+  <dialog data-modal-target="dialog" data-action="click->modal#backdropClose"
+          class="m-auto w-full max-w-2xl rounded-lg p-0 shadow-xl backdrop:bg-gray-900/50">
+    <%= turbo_frame_tag "day_modal" do %>
+      <p class="p-6 text-sm text-gray-500">Loading…</p>
+    <% end %>
+  </dialog>
 </div>

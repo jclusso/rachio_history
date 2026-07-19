@@ -7,6 +7,7 @@ class Zone < ApplicationRecord
   validates :rachio_id, presence: true, uniqueness: true
 
   scope :ordered, -> { order(:number) }
+  scope :enabled, -> { where(enabled: true) }
 
   def runs
     events.zone_runs.recent_first

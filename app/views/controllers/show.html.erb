@@ -57,7 +57,15 @@
   </div>
 </div>
 
-<h2 class="mb-3 text-lg font-semibold">Zones</h2>
+<div class="mb-3 flex items-center justify-between">
+  <h2 class="text-lg font-semibold">Zones</h2>
+  <% if params[:show_disabled].present? %>
+    <%= link_to "Hide disabled zones", controller_path(@controller), class: "text-sm text-emerald-700 hover:text-emerald-800 hover:underline" %>
+  <% else %>
+    <% hidden = @controller.zones.where(enabled: false).count %>
+    <%= link_to "Show #{hidden} disabled #{'zone'.pluralize(hidden)}", controller_path(@controller, show_disabled: 1), class: "text-sm text-gray-500 hover:text-emerald-700 hover:underline" if hidden.positive? %>
+  <% end %>
+</div>
 <div class="mb-8 overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
   <table class="min-w-full divide-y divide-gray-200 text-sm">
     <thead class="bg-gray-50">

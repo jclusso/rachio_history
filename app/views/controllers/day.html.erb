@@ -1,0 +1,46 @@
+<%= turbo_frame_tag "day_modal" do %>
+  <div class="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+    <h2 class="text-lg font-semibold"><%= @date.strftime("%A, %B %-d, %Y") %></h2>
+    <button type="button" data-action="modal#close" class="rounded-md px-2 py-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600">✕</button>
+  </div>
+
+  <div class="max-h-[70vh] overflow-y-auto p-5">
+    <h3 class="mb-2 text-sm font-semibold uppercase tracking-wider text-gray-500">Zones watered</h3>
+    <% by_zone = @runs.group_by(&:zone) %>
+    <% if by_zone.any? %>
+      <table class="mb-6 min-w-full divide-y divide-gray-200 text-sm">
+        <tbody class="divide-y divide-gray-100">
+          <% by_zone.each do |zone, runs| %>
+            <tr>
+              <td class="py-2 pr-4 font-medium"><%= zone ? link_to(zone.name, zone, data: { turbo_frame: "_top" }, class: "text-emerald-700 hover:underline") : "Unknown zone" %></td>
+              <td class="py-2 pr-4 whitespace-nowrap text-gray-500"><%= runs.map { |r| r.run_started_at.strftime("%l:%M%P").strip }.join(", ") %></td>
+              <td class="py-2 text-right font-semibold whitespace-nowrap"><%= duration_in_words(runs.sum { |r| r.duration_seconds.to_i }) %></td>
+            </tr>
+          <% end %>
+          <tr>
+            <td class="py-2 pr-4 font-semibold">Total</td>
+            <td></td>
+            <td class="py-2 text-right font-bold whitespace-nowrap"><%= duration_in_words(@runs.sum { |r| r.duration_seconds.to_i }) %></td>
+          </tr>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="mb-6 text-sm text-gray-500">No zones watered this day.</p>
+    <% end %>
+
+    <h3 class="mb-2 text-sm font-semibold uppercase tracking-wider text-gray-500">Full log</h3>
+    <% if @day_events.any? %>
+      <ol class="space-y-2">
+        <% @day_events.each do |event| %>
+          <li class="flex items-start gap-3 text-sm">
+            <span class="w-16 shrink-0 whitespace-nowrap pt-0.5 text-gray-400"><%= event.occurred_at.strftime("%l:%M %p") %></span>
+            <span class="shrink-0 pt-0.5"><%= event_type_badge(event) %></span>
+            <span class="text-gray-700"><%= event.summary %></span>
+          </li>
+        <% end %>
+      </ol>
+    <% else %>
+      <p class="text-sm text-gray-500">No events recorded this day.</p>
+    <% end %>
+  </div>
+<% end %>

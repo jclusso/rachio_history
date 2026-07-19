@@ -1,0 +1,18 @@
+<p class="mb-4 text-sm"><%= link_to "← #{@zone.controller.name}", @zone.controller, class: "text-emerald-700 hover:text-emerald-800 hover:underline" %></p>
+
+<header class="mb-2 flex items-center gap-3">
+  <h1 class="text-2xl font-bold tracking-tight">Zone <%= @zone.number %>: <%= @zone.name %></h1>
+  <%= boolean_badge @zone.enabled? %>
+</header>
+<p class="mb-6 text-sm text-gray-600">
+  Last watered: <%= @zone.last_watered_at&.strftime("%b %-d, %Y %l:%M %p") || "never" %> ·
+  Total recorded watering: <%= number_with_delimiter @zone.total_run_minutes %> minutes
+</p>
+
+<div class="mb-8">
+  <h2 class="mb-3 text-lg font-semibold">Watering — last 12 months</h2>
+  <%= render "shared/heatmap", days: @zone.daily_watering_minutes(1.year.ago.to_date..Date.current), from: 1.year.ago.to_date, to: Date.current %>
+</div>
+
+<h2 class="mb-3 text-lg font-semibold">Runs</h2>
+<%= render "events/runs", runs: @zone.watering_runs.limit(200) %>

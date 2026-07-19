@@ -1,0 +1,32 @@
+<div class="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+  <table class="min-w-full divide-y divide-gray-200 text-sm">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Time</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Zone</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Type</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Summary</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Duration</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      <% events.group_by { |event| event.occurred_at.to_date }.each do |date, day_events| %>
+        <tr class="bg-gray-50/80">
+          <td colspan="5" class="px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400"><%= date.strftime("%A, %B %-d, %Y") %></td>
+        </tr>
+        <% day_events.each do |event| %>
+          <tr class="hover:bg-emerald-50/40">
+            <td class="px-4 py-2.5 whitespace-nowrap"><%= event.occurred_at.strftime("%l:%M %p") %></td>
+            <td class="px-4 py-2.5 whitespace-nowrap"><%= event.zone ? link_to(event.zone.name.truncate(30), event.zone, class: "font-medium text-emerald-700 hover:text-emerald-800 hover:underline") : "—" %></td>
+            <td class="px-4 py-2.5"><%= event_type_badge(event) %></td>
+            <td class="px-4 py-2.5 text-gray-600"><%= event.summary %></td>
+            <td class="px-4 py-2.5 whitespace-nowrap"><%= duration_in_words(event.duration_seconds) %></td>
+          </tr>
+        <% end %>
+      <% end %>
+      <% if events.none? %>
+        <tr><td colspan="5" class="px-4 py-6 text-center text-gray-500">No events yet — run a sync or backfill.</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,90 @@
+<%= turbo_stream_from @controller %>
+
+<p class="mb-4 text-sm"><%= link_to "← All controllers", controllers_path, class: "text-emerald-700 hover:text-emerald-800 hover:underline" %></p>
+
+<header class="mb-4 flex flex-wrap items-center justify-between gap-4">
+  <div class="flex items-center gap-3">
+    <h1 class="text-2xl font-bold tracking-tight"><%= @controller.name %></h1>
+    <%= status_badge @controller.status %>
+  </div>
+  <div class="flex items-center gap-2">
+    <%= link_to "Calendar", calendar_controller_path(@controller), class: "rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50" %>
+    <%= link_to "Event history", history_controller_path(@controller), class: "rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50" %>
+    <%= button_to "Sync recent", sync_controller_path(@controller), class: "rounded-md bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 cursor-pointer" %>
+    <%= button_to "Backfill full history", backfill_controller_path(@controller), class: "rounded-md bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 cursor-pointer",
+          data: { turbo_confirm: "Pull all history back to #{@controller.rachio_created_at&.to_date || 'the beginning'}?" } %>
+  </div>
+</header>
+
+<% if notice %><p class="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"><%= notice %></p><% end %>
+
+<p class="mb-4 text-sm text-gray-600"><%= @controller.model %> · activated <%= @controller.rachio_created_at&.to_date %></p>
+
+<% if @controller.backfilling? %>
+  <p class="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">Backfilling history… <%= @controller.backfill_progress %>% (fetched back to <%= @controller.backfill_cursor_at&.to_date || "now" %>)</p>
+<% end %>
+
+<div class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+  <% total_seconds = @minutes_by_zone.sum { |_z, m| m } * 60
+     this_month = @controller.watering_runs(Date.current.beginning_of_month.beginning_of_day..Time.current)
+     top_zone = @minutes_by_zone.first
+     [
+       [ "Events", number_with_delimiter(@controller.events.count) ],
+       [ "Runs this month", number_with_delimiter(this_month.count) ],
+       [ "Total watering", "#{number_with_delimiter(total_seconds / 3600)} hrs" ],
+       [ "Most-watered zone", top_zone ? top_zone.first.name.truncate(24) : "—" ]
+     ].each do |label, value| %>
+    <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+      <div class="text-xs font-semibold uppercase tracking-wider text-gray-500"><%= label %></div>
+      <div class="mt-1 text-2xl font-bold tracking-tight text-gray-900"><%= value %></div>
+    </div>
+  <% end %>
+</div>
+
+<div class="mb-8">
+  <h2 class="mb-3 text-lg font-semibold">Watering — last 12 months</h2>
+  <%= render "shared/heatmap", days: @heatmap_days, from: 1.year.ago.to_date, to: Date.current %>
+</div>
+
+<div class="mb-8 grid gap-6 lg:grid-cols-2">
+  <div>
+    <h2 class="mb-3 text-lg font-semibold">Minutes by zone</h2>
+    <%= render "shared/bar_chart", rows: @minutes_by_zone.first(12).map { |zone, minutes| [ link_to(zone.name, zone, class: "hover:underline"), minutes ] }, max: nil %>
+  </div>
+  <div>
+    <h2 class="mb-3 text-lg font-semibold">Minutes by month</h2>
+    <%= render "shared/bar_chart", rows: @minutes_by_month.sort.map { |month, minutes| [ month.strftime("%b %Y"), minutes ] }, max: nil %>
+  </div>
+</div>
+
+<h2 class="mb-3 text-lg font-semibold">Zones</h2>
+<div class="mb-8 overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+  <table class="min-w-full divide-y divide-gray-200 text-sm">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">#</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Zone</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Status</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Last watered</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Total minutes</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      <% @zones.each do |zone| %>
+        <tr class="hover:bg-emerald-50/40">
+          <td class="px-4 py-3"><%= zone.number %></td>
+          <td class="px-4 py-3"><%= link_to zone.name, zone, class: "font-medium text-emerald-700 hover:text-emerald-800 hover:underline" %></td>
+          <td class="px-4 py-3"><%= boolean_badge zone.enabled? %></td>
+          <td class="px-4 py-3 whitespace-nowrap"><%= zone.last_watered_at&.strftime("%b %-d, %Y %l:%M %p") || "—" %></td>
+          <td class="px-4 py-3"><%= number_with_delimiter zone.total_run_minutes %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<div class="mb-3 flex items-center justify-between">
+  <h2 class="text-lg font-semibold">Recent runs</h2>
+  <%= link_to "Full event history →", history_controller_path(@controller), class: "text-sm text-emerald-700 hover:text-emerald-800 hover:underline" %>
+</div>
+<%= render "events/runs", runs: @recent_runs %>

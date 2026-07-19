@@ -1,0 +1,14 @@
+<%# locals: rows ([[label_html_or_string, minutes], ...]), max: (optional) %>
+<% max ||= rows.map(&:last).max.to_i %>
+<div class="space-y-2 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+  <% rows.each do |label, minutes| %>
+    <div class="flex items-center gap-3 text-sm">
+      <div class="w-44 shrink-0 truncate text-gray-700"><%= label %></div>
+      <div class="h-4 flex-1 rounded bg-gray-100">
+        <div class="h-4 rounded bg-emerald-500" style="width: <%= max.zero? ? 0 : (minutes * 100.0 / max).clamp(1, 100) %>%"></div>
+      </div>
+      <div class="w-20 shrink-0 text-right text-gray-500"><%= number_with_delimiter(minutes) %> min</div>
+    </div>
+  <% end %>
+  <% if rows.none? %><p class="text-sm text-gray-500">No data yet.</p><% end %>
+</div>

@@ -1,0 +1,37 @@
+<p class="mb-4 text-sm"><%= link_to "← #{@controller.name}", @controller, class: "text-emerald-700 hover:text-emerald-800 hover:underline" %></p>
+
+<header class="mb-6 flex flex-wrap items-center justify-between gap-4">
+  <h1 class="text-2xl font-bold tracking-tight"><%= @controller.name %> — <%= @month.strftime("%B %Y") %></h1>
+  <div class="flex items-center gap-2">
+    <%= link_to "← #{(@month - 1.month).strftime('%b')}", calendar_controller_path(@controller, month: (@month - 1.month).strftime("%Y-%m")), class: "rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50" %>
+    <%= link_to "Today", calendar_controller_path(@controller), class: "rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50" %>
+    <% unless @month >= Date.current.beginning_of_month %>
+      <%= link_to "#{(@month + 1.month).strftime('%b')} →", calendar_controller_path(@controller, month: (@month + 1.month).strftime("%Y-%m")), class: "rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50" %>
+    <% end %>
+  </div>
+</header>
+
+<div class="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+  <div class="grid min-w-[56rem] grid-cols-7 border-b border-gray-200 bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500">
+    <% %w[Sun Mon Tue Wed Thu Fri Sat].each do |day| %><div class="px-2 py-2"><%= day %></div><% end %>
+  </div>
+  <div class="grid min-w-[56rem] grid-cols-7 divide-x divide-y divide-gray-100">
+    <% (@month.beginning_of_week(:sunday)..@month.end_of_month.end_of_week(:sunday)).each do |day| %>
+      <% runs = @runs_by_day[day] || [] %>
+      <div class="min-h-28 p-2 <%= 'bg-gray-50 text-gray-400' unless day.month == @month.month %> <%= 'ring-2 ring-inset ring-emerald-500' if day == Date.current %>">
+        <div class="mb-1 flex items-center justify-between text-xs">
+          <span class="font-semibold"><%= day.day %></span>
+          <% if runs.any? %><span class="text-gray-400"><%= duration_in_words(runs.sum { |r| r.duration_seconds.to_i }) %></span><% end %>
+        </div>
+        <div class="space-y-0.5">
+          <% runs.sort_by(&:run_started_at).first(6).each do |run| %>
+            <div class="truncate rounded bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-800" title="<%= run.summary %>">
+              <%= run.run_started_at.strftime("%l:%M%P").strip %> <%= run.zone&.name&.truncate(18) || "Zone" %> · <%= duration_in_words(run.duration_seconds) %>
+            </div>
+          <% end %>
+          <% if runs.size > 6 %><div class="px-1.5 text-xs text-gray-400">+<%= runs.size - 6 %> more</div><% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

@@ -1,0 +1,31 @@
+<%# locals: runs (zone_completed events) %>
+<div class="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+  <table class="min-w-full divide-y divide-gray-200 text-sm">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Started</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Zone</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Duration</th>
+        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Result</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      <% runs.group_by { |run| run.occurred_at.to_date }.each do |date, day_runs| %>
+        <tr class="bg-gray-50/80">
+          <td colspan="4" class="px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400"><%= date.strftime("%A, %B %-d, %Y") %></td>
+        </tr>
+        <% day_runs.each do |run| %>
+          <tr class="hover:bg-emerald-50/40">
+            <td class="px-4 py-2.5 whitespace-nowrap"><%= run.run_started_at.strftime("%l:%M %p") %></td>
+            <td class="px-4 py-2.5"><%= run.zone ? link_to(run.zone.name, run.zone, class: "font-medium text-emerald-700 hover:text-emerald-800 hover:underline") : tag.span(run.summary.to_s.truncate(60), class: "text-gray-500") %></td>
+            <td class="px-4 py-2.5 whitespace-nowrap"><%= duration_in_words(run.duration_seconds) %></td>
+            <td class="px-4 py-2.5"><%= event_type_badge(run) %></td>
+          </tr>
+        <% end %>
+      <% end %>
+      <% if runs.none? %>
+        <tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">No watering runs recorded.</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

@@ -16,6 +16,7 @@ Rails.application.routes.draw do
   end
 
   resources :zones, only: :show
+  resources :zone_aliases, only: :destroy
 
   mount MissionControl::Jobs::Engine, at: "/jobs"
 

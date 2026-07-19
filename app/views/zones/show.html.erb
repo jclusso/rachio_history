@@ -4,6 +4,17 @@
   <h1 class="text-2xl font-bold tracking-tight">Zone <%= @zone.number %>: <%= @zone.name %></h1>
   <%= boolean_badge @zone.enabled? %>
 </header>
+<% if @zone.zone_aliases.any? %>
+  <p class="mb-2 text-sm text-gray-500">Also known as:
+    <% @zone.zone_aliases.each do |zone_alias| %>
+      <span class="mr-1 inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+        <%= zone_alias.name %>
+        <%= button_to "✕", zone_alias_path(zone_alias), method: :delete, form_class: "inline", class: "cursor-pointer text-gray-400 hover:text-red-600",
+              data: { turbo_confirm: "Remove this alias? Its #{zone_alias.zone.controller.events.where(zone_id: @zone.id).where('summary LIKE ?', "#{ZoneAlias.sanitize_sql_like(zone_alias.name)}%").count} linked events will be unassigned." } %>
+      </span>
+    <% end %>
+  </p>
+<% end %>
 <p class="mb-6 text-sm text-gray-600">
   Last watered: <%= @zone.last_watered_at&.strftime("%b %-d, %Y %l:%M %p") || "never" %> ·
   Total recorded watering: <%= number_with_delimiter @zone.total_run_minutes %> minutes

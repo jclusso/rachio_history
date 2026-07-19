@@ -81,7 +81,12 @@
       <% @zones.each do |zone| %>
         <tr class="hover:bg-emerald-50/40">
           <td class="px-4 py-3"><%= zone.number %></td>
-          <td class="px-4 py-3"><%= link_to zone.name, zone, class: "font-medium text-emerald-700 hover:text-emerald-800 hover:underline" %></td>
+          <td class="px-4 py-3">
+            <%= link_to zone.name, zone, class: "font-medium text-emerald-700 hover:text-emerald-800 hover:underline" %>
+            <% if zone.zone_aliases.any? %>
+              <div class="mt-0.5 text-xs text-gray-400">was: <%= zone.zone_aliases.map(&:name).join(", ") %></div>
+            <% end %>
+          </td>
           <td class="px-4 py-3"><%= boolean_badge zone.enabled? %></td>
           <td class="px-4 py-3 whitespace-nowrap"><%= zone.last_watered_at&.strftime("%b %-d, %Y %l:%M %p") || "—" %></td>
           <td class="px-4 py-3"><%= number_with_delimiter zone.total_run_minutes %></td>

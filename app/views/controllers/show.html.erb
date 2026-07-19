@@ -100,7 +100,7 @@
         <% all_zones = @controller.zones.ordered %>
         <% @unmatched_labels.each do |label, count| %>
           <tr>
-            <td class="px-4 py-2.5 font-medium text-gray-800"><%= label %></td>
+            <td class="px-4 py-2.5 font-medium"><%= link_to label, history_controller_path(@controller, label: label), class: "text-emerald-700 hover:text-emerald-800 hover:underline", title: "View these events with run durations" %></td>
             <td class="px-4 py-2.5 whitespace-nowrap text-gray-500"><%= number_with_delimiter(count) %> events</td>
             <td class="px-4 py-2.5">
               <%= form_with url: claim_zone_label_controller_path(@controller), class: "flex items-center gap-2" do |form| %>

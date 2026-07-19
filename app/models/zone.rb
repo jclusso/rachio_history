@@ -31,8 +31,9 @@ class Zone < ApplicationRecord
   # event on this controller whose summary references it.
   def claim_label!(label)
     zone_aliases.find_or_create_by!(name: label)
+    pattern = "#{ZoneAlias.sanitize_sql_like(label)}%"
     controller.events.where(zone_id: nil)
-              .where("summary LIKE ?", "#{ZoneAlias.sanitize_sql_like(label)}%")
+              .where("summary LIKE ? OR summary LIKE ?", pattern, "Soaking #{pattern}")
               .update_all(zone_id: id)
   end
 end

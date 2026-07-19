@@ -36,8 +36,13 @@ class Event < ApplicationRecord
   # Best display name for the zone: the linked zone, or the (possibly
   # truncated) name Rachio put in the summary for zones since renamed/deleted.
   def zone_label
-    zone&.name ||
-      summary.to_s[/\A(.+?)(?:\.{2,3})?\s+(?:began|completed|stopped|watered)/, 1] ||
-      "Unknown zone"
+    zone&.name || parsed_zone_name || "Unknown zone"
+  end
+
+  # The zone name Rachio embedded in the summary, e.g. "Back Yard began
+  # watering..." or cycling events like "Soaking Back Yard for 30 minutes".
+  def parsed_zone_name
+    text = summary.to_s.sub(/\ASoaking\s+/i, "")
+    text[/\A(.+?)(?:\.{2,3})?\s+(?:began|completed|stopped|watered|for\s+\d)/i, 1]
   end
 end

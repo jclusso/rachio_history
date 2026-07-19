@@ -43,18 +43,22 @@ module EventIngestible
   end
 
   # Zone events don't carry a zone id; match on the zone name Rachio puts
-  # in the summary text (e.g. "Back Yard began watering at ..."). Long zone
-  # names get truncated with "..." in summaries, so also match by prefix.
+  # in the summary text (e.g. "Back Yard began watering at ..." or "Soaking
+  # Back Yard for 30 minutes"). Long zone names get truncated with "..." in
+  # summaries, so also match by prefix, case-insensitively — Rachio
+  # lowercases names mid-sentence.
   def match_zone(payload, zones_by_name)
-    text = payload["summary"].to_s
+    text = payload["summary"].to_s.sub(/\ASoaking\s+/i, "")
     return nil if text.blank?
 
-    exact = zones_by_name.detect { |name, _zone| text.start_with?(name) }&.last
+    down = text.downcase
+    exact = zones_by_name.detect { |name, _zone| down.start_with?(name.downcase) }&.last
     return exact if exact
 
     truncated = text[/\A(.+?)\.{2,3}/, 1]
     return nil if truncated.blank?
 
-    zones_by_name.detect { |name, _zone| name.start_with?(truncated) }&.last
+    truncated = truncated.downcase
+    zones_by_name.detect { |name, _zone| name.downcase.start_with?(truncated) }&.last
   end
 end

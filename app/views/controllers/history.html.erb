@@ -2,6 +2,13 @@
 
 <h1 class="mb-4 text-2xl font-bold tracking-tight"><%= @controller.name %> — Event history</h1>
 
+<% if params[:label].present? %>
+  <p class="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+    Showing events for former zone name “<%= params[:label] %>” — check the run durations against your zones, then assign it from the
+    <%= link_to "controller page", controller_path(@controller), class: "font-semibold underline" %>.
+  </p>
+<% end %>
+
 <%= form_with url: history_controller_path(@controller), method: :get, class: "mb-3 flex flex-wrap items-center gap-4" do |form| %>
   <%= form.select :zone_id, options_from_collection_for_select(@zones, :id, :name, params[:zone_id]),
         { include_blank: "All zones" }, onchange: "this.form.requestSubmit()", class: "rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500" %>

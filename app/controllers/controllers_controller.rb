@@ -22,6 +22,10 @@ class ControllersController < ApplicationController
     @zones = @zones.enabled unless params[:show_disabled].present? || params[:zone_id].present?
     @events = @controller.events.recent_first.includes(:zone)
     @events = @events.where(zone_id: params[:zone_id]) if params[:zone_id].present?
+    if params[:label].present?
+      pattern = "#{Event.sanitize_sql_like(params[:label])}%"
+      @events = @events.where("summary LIKE ? OR summary LIKE ?", pattern, "Soaking #{pattern}")
+    end
     @events = @events.zone_runs if params[:runs_only].present?
     @events = @events.limit(300)
   end

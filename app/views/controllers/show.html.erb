@@ -57,6 +57,7 @@
   </div>
 </div>
 
+<%= turbo_frame_tag "zones" do %>
 <div class="mb-3 flex items-center justify-between">
   <h2 class="text-lg font-semibold">Zones</h2>
   <% if params[:show_disabled].present? %>
@@ -81,7 +82,7 @@
       <% @zones.each do |zone| %>
         <tr class="hover:bg-emerald-50/40">
           <td class="px-4 py-3"><%= zone.number %></td>
-          <td class="px-4 py-3"><%= link_to zone.name, zone, class: "font-medium text-emerald-700 hover:text-emerald-800 hover:underline" %></td>
+          <td class="px-4 py-3"><%= link_to zone.name, zone, data: { turbo_frame: "_top" }, class: "font-medium text-emerald-700 hover:text-emerald-800 hover:underline" %></td>
           <td class="px-4 py-3"><%= boolean_badge zone.enabled? %></td>
           <td class="px-4 py-3 whitespace-nowrap"><%= zone.last_watered_at&.strftime("%b %-d, %Y %l:%M %p") || "—" %></td>
           <td class="px-4 py-3"><%= number_with_delimiter zone.total_run_minutes %></td>
@@ -90,6 +91,7 @@
     </tbody>
   </table>
 </div>
+<% end %>
 
 <% if @unmatched_labels.any? %>
   <h2 class="mb-1 text-lg font-semibold">Unmatched zone names</h2>

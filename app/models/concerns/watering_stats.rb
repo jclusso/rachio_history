@@ -15,6 +15,18 @@ module WateringStats
           .transform_values { |group| group.sum { |event| event.duration_seconds.to_i } / 60 }
   end
 
+  # { Date => [[zone name, minutes], ...] }, most-watered zone first — the
+  # per-day detail behind the heatmap tooltip.
+  def daily_watering_breakdown(range)
+    events.zone_completed.includes(:zone).between(range.begin, range.end)
+          .group_by { |event| event.occurred_at.to_date }
+          .transform_values do |group|
+            group.group_by { |event| event.zone&.name.presence || "Unmatched zone" }
+                 .map { |name, runs| [ name, runs.sum { |event| event.duration_seconds.to_i } / 60 ] }
+                 .sort_by { |_name, minutes| -minutes }
+          end
+  end
+
   def watering_seconds(range = nil)
     watering_runs(range).sum { |event| event.duration_seconds.to_i }
   end

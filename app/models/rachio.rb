@@ -7,6 +7,14 @@ module Rachio
   # Rachio limits event queries to windows of ~4 weeks.
   EVENT_WINDOW = 28.days
 
+  # Rachio only serves a rolling window of event history — measured at almost
+  # exactly 12 months on every controller we sync, regardless of how long the
+  # device has been activated. Anything older comes back empty, so backfills
+  # stop here instead of grinding through years of empty EVENT_WINDOW queries
+  # against the ~1700 calls/day rate limit. One month of slack over what we
+  # observed, in case the real cutoff drifts.
+  HISTORY_RETENTION = 13.months
+
   class Error < StandardError; end
   class RateLimited < Error; end
   class NotFound < Error; end

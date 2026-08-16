@@ -1,16 +1,30 @@
-<%# locals: days ({Date => minutes}), from:, to: (Dates) %>
+<%# locals: days ({Date => minutes}), from:, to: (Dates), breakdown: ({Date => [[zone, minutes]]}, optional) %>
 <% first = from.beginning_of_week(:sunday) %>
-<div class="overflow-x-auto rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-  <div class="flex gap-[3px]">
-    <% (first..to).each_slice(7) do |week| %>
-      <div class="flex flex-col gap-[3px]">
-        <% week.each do |day| %>
-          <div class="h-3 w-3 rounded-sm <%= day < from ? 'bg-transparent' : heat_class(days[day]) %>"
-               title="<%= day.strftime('%b %-d, %Y') %> — <%= days[day].to_i %> min"></div>
-        <% end %>
-      </div>
-    <% end %>
+<% breakdown = local_assigns[:breakdown] || {} %>
+<%# relative: the tooltip is positioned against this card, so it can escape
+    the horizontal scroller below without being clipped by it. %>
+<div class="relative rounded-lg border border-gray-200 bg-white p-4 shadow-sm" data-controller="heatmap">
+  <div class="overflow-x-auto">
+    <div class="flex gap-[3px]">
+      <% (first..to).each_slice(7) do |week| %>
+        <div class="flex flex-col gap-[3px]">
+          <% week.each do |day| %>
+            <% if day < from %>
+              <div class="h-3 w-3 rounded-sm bg-transparent"></div>
+            <% else %>
+              <div class="h-3 w-3 rounded-sm <%= heat_class(days[day]) %>"
+                   data-action="mouseenter->heatmap#show mouseleave->heatmap#hide"
+                   data-date="<%= day.strftime('%A, %b %-d, %Y') %>"
+                   data-total="<%= days[day].to_i %>"
+                   data-runs="<%= (breakdown[day] || []).to_json %>"></div>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
   </div>
+  <div data-heatmap-target="tooltip"
+       class="pointer-events-none absolute left-0 top-0 z-20 hidden min-w-[10rem] rounded-md bg-gray-900 px-2.5 py-1.5 text-xs text-white shadow-lg"></div>
   <div class="mt-3 flex items-center gap-2 text-xs text-gray-500">
     <span><%= from.strftime("%b %Y") %></span>
     <span class="ml-auto">Less</span>

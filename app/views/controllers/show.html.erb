@@ -43,7 +43,7 @@
 
 <div class="mb-8">
   <h2 class="mb-3 text-lg font-semibold">Watering — last 12 months</h2>
-  <%= render "shared/heatmap", days: @heatmap_days, from: 1.year.ago.to_date, to: Date.current %>
+  <%= render "shared/heatmap", days: @heatmap_days, breakdown: @heatmap_breakdown, from: 1.year.ago.to_date, to: Date.current %>
 </div>
 
 <div class="mb-8 grid gap-6 lg:grid-cols-2">
@@ -124,3 +124,15 @@
   <%= link_to "Full event history →", history_controller_path(@controller), class: "text-sm text-emerald-700 hover:text-emerald-800 hover:underline" %>
 </div>
 <%= render "events/runs", runs: @recent_runs %>
+
+<%# Destructive and irreversible, so it lives at the very bottom in plain
+    text rather than as a button in the controllers table, where it sat one
+    stray click away from wiping a decade of history. %>
+<div class="mt-10 border-t border-gray-200 pt-4">
+  <%= button_to "Remove this controller and all its history",
+        @controller,
+        method: :delete,
+        form_class: "inline",
+        data: { turbo_confirm: "Remove #{@controller.name.presence || @controller.rachio_id} and all #{number_with_delimiter(@controller.events.count)} of its events? This cannot be undone." },
+        class: "text-xs text-gray-400 underline underline-offset-2 hover:text-red-600 cursor-pointer" %>
+</div>

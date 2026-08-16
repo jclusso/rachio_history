@@ -10,7 +10,9 @@ class ControllersController < ApplicationController
     @zones = @controller.zones.ordered
     @zones = @zones.enabled unless params[:show_disabled].present?
     @recent_runs = @controller.watering_runs.limit(20)
-    @heatmap_days = @controller.daily_watering_minutes(1.year.ago.to_date..Date.current)
+    heatmap_range = 1.year.ago.to_date..Date.current
+    @heatmap_days = @controller.daily_watering_minutes(heatmap_range)
+    @heatmap_breakdown = @controller.daily_watering_breakdown(heatmap_range)
     visible_zone_ids = @zones.ids
     @minutes_by_zone = @controller.minutes_by_zone.select { |zone, _minutes| visible_zone_ids.include?(zone.id) }
     @unmatched_labels = @controller.events.zone_runs.where(zone_id: nil).map(&:zone_label).tally.sort_by { |_label, count| -count }

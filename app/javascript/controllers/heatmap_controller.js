@@ -16,10 +16,12 @@ export default class extends Controller {
     if (total === 0 && runs.length === 0) {
       body = `<div class="text-gray-400">No watering</div>`
     } else {
+      // Minutes are floored upstream, so a sub-minute run arrives as 0 —
+      // show "<1 min" rather than a line claiming the zone never ran.
       const lines = runs
         .map(
           ([name, minutes]) =>
-            `<div class="flex justify-between gap-4"><span>${escapeHtml(name)}</span><span class="text-gray-400">${minutes} min</span></div>`
+            `<div class="flex justify-between gap-4"><span>${escapeHtml(name)}</span><span class="text-gray-400">${minutes < 1 ? "<1" : minutes} min</span></div>`
         )
         .join("")
       body = `<div class="font-semibold">${total} min total</div>${lines}`

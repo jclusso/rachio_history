@@ -37,7 +37,8 @@ export default class extends Controller {
   }
 
   // Centre above the cell, then pull back inside the card if that would
-  // overflow either edge.
+  // overflow either edge. Top-row cells have no room above, so the tooltip
+  // flips below them rather than covering the section heading.
   #position(cell) {
     const card = this.element.getBoundingClientRect()
     const box = cell.getBoundingClientRect()
@@ -45,9 +46,10 @@ export default class extends Controller {
 
     const left = box.left - card.left + box.width / 2 - tip.offsetWidth / 2
     const max = this.element.clientWidth - tip.offsetWidth - 8
+    const above = box.top - card.top - tip.offsetHeight - 8
 
     tip.style.left = `${Math.max(8, Math.min(left, max))}px`
-    tip.style.top = `${box.top - card.top - tip.offsetHeight - 8}px`
+    tip.style.top = `${above < 0 ? box.bottom - card.top + 8 : above}px`
   }
 }
 

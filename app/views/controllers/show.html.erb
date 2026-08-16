@@ -6,19 +6,23 @@
   <div class="flex items-center gap-3">
     <h1 class="text-2xl font-bold tracking-tight"><%= @controller.name %></h1>
     <%= status_badge @controller.status %>
+    <%# Hardware details are reference material, not something you read every
+        visit: hover for the summary, click through to Manage for the rest. %>
+    <%= link_to manage_controller_path(@controller),
+          title: device_summary(@controller),
+          class: "flex h-5 w-5 items-center justify-center rounded-full border border-gray-300 text-xs font-semibold text-gray-400 hover:border-emerald-600 hover:text-emerald-700" do %>
+      i<span class="sr-only">Device details</span>
+    <% end %>
   </div>
   <div class="flex items-center gap-2">
     <%= link_to "Calendar", calendar_controller_path(@controller), class: "rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50" %>
     <%= link_to "Event history", history_controller_path(@controller), class: "rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50" %>
-    <%= button_to "Sync recent", sync_controller_path(@controller), class: "rounded-md bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 cursor-pointer" %>
-    <%= button_to "Backfill full history", backfill_controller_path(@controller), class: "rounded-md bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 cursor-pointer",
-          data: { turbo_confirm: "Pull all history back to #{@controller.rachio_created_at&.to_date || 'the beginning'}?" } %>
+    <%= link_to "Manage", manage_controller_path(@controller), class: "rounded-md bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700" %>
   </div>
 </header>
 
 <% if notice %><p class="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"><%= notice %></p><% end %>
-
-<p class="mb-4 text-sm text-gray-600"><%= @controller.model %> · activated <%= @controller.rachio_created_at&.to_date %></p>
+<% if alert %><p class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"><%= alert %></p><% end %>
 
 <% if @controller.backfilling? %>
   <p class="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">Backfilling history… <%= @controller.backfill_progress %>% (fetched back to <%= @controller.backfill_cursor_at&.to_date || "now" %>)</p>
@@ -67,6 +71,19 @@
     <%= link_to "Show #{hidden} disabled #{'zone'.pluralize(hidden)}", controller_path(@controller, show_disabled: 1), class: "text-sm text-gray-500 hover:text-emerald-700 hover:underline" if hidden.positive? %>
   <% end %>
 </div>
+<% if @unmatched_labels.any? %>
+  <%# Only a pointer: the assignment forms live on the Manage page, but a silent
+      move would mean never discovering that some history is stranded. Sits above
+      the table because it's a caveat about what the table doesn't account for —
+      below it, the numbers get read as complete before the warning arrives. %>
+  <p class="mb-3 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+    <%= pluralize @unmatched_labels.count, "zone name" %> in this history
+    (<%= number_with_delimiter @unmatched_labels.sum(&:last) %> events) match no current zone — usually a zone since renamed or deleted.
+    <%# Breaks out of the zones frame: the manage page has no frame to land in. %>
+    <%= link_to "Reunite them on the manage page →", manage_controller_path(@controller), data: { turbo_frame: "_top" }, class: "font-semibold underline" %>
+  </p>
+<% end %>
+
 <div class="mb-8 overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
   <table class="min-w-full divide-y divide-gray-200 text-sm">
     <thead class="bg-gray-50">
@@ -93,46 +110,8 @@
 </div>
 <% end %>
 
-<% if @unmatched_labels.any? %>
-  <h2 class="mb-1 text-lg font-semibold">Unmatched zone names</h2>
-  <p class="mb-3 text-sm text-gray-600">These names appear in historical events but don't match any current zone (renamed or deleted zones). Assign each to a zone to reunite its history.</p>
-  <div class="mb-8 overflow-x-auto rounded-lg border border-amber-200 bg-amber-50/40 shadow-sm">
-    <table class="min-w-full divide-y divide-amber-100 text-sm">
-      <tbody class="divide-y divide-amber-100">
-        <% all_zones = @controller.zones.ordered %>
-        <% @unmatched_labels.each do |label, count| %>
-          <tr>
-            <td class="px-4 py-2.5 font-medium"><%= link_to label, history_controller_path(@controller, label: label), class: "text-emerald-700 hover:text-emerald-800 hover:underline", title: "View these events with run durations" %></td>
-            <td class="px-4 py-2.5 whitespace-nowrap text-gray-500"><%= number_with_delimiter(count) %> events</td>
-            <td class="px-4 py-2.5">
-              <%= form_with url: claim_zone_label_controller_path(@controller), class: "flex items-center gap-2" do |form| %>
-                <%= form.hidden_field :label, value: label %>
-                <%= form.select :zone_id, options_from_collection_for_select(all_zones, :id, :name),
-                      { include_blank: "Assign to zone…" }, required: true, class: "rounded-md border border-gray-300 bg-white px-2 py-1 text-sm shadow-sm" %>
-                <%= form.submit "Link", class: "rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 cursor-pointer" %>
-              <% end %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
-<% end %>
-
 <div class="mb-3 flex items-center justify-between">
   <h2 class="text-lg font-semibold">Recent runs</h2>
   <%= link_to "Full event history →", history_controller_path(@controller), class: "text-sm text-emerald-700 hover:text-emerald-800 hover:underline" %>
 </div>
 <%= render "events/runs", runs: @recent_runs %>
-
-<%# Destructive and irreversible, so it lives at the very bottom in plain
-    text rather than as a button in the controllers table, where it sat one
-    stray click away from wiping a decade of history. %>
-<div class="mt-10 border-t border-gray-200 pt-4">
-  <%= button_to "Remove this controller and all its history",
-        @controller,
-        method: :delete,
-        form_class: "inline",
-        data: { turbo_confirm: "Remove #{@controller.name.presence || @controller.rachio_id} and all #{number_with_delimiter(@controller.events.count)} of its events? This cannot be undone." },
-        class: "text-xs text-gray-400 underline underline-offset-2 hover:text-red-600 cursor-pointer" %>
-</div>

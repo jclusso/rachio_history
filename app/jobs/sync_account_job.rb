@@ -4,7 +4,9 @@ class SyncAccountJob < ApplicationJob
   retry_on Rachio::RateLimited, wait: 1.hour, attempts: 5
 
   def perform
-    Controller.sync_account!.each do |controller|
+    # Merged controllers are retired hardware — their history now lives on the
+    # successor, so there is nothing new to pull for them.
+    Controller.sync_account!.reject(&:merged?).each do |controller|
       SyncControllerJob.perform_later(controller)
     end
   end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_19_000004) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_16_000001) do
   create_table "controllers", force: :cascade do |t|
     t.datetime "backfill_completed_at"
     t.datetime "backfill_cursor_at"
@@ -20,6 +20,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_000004) do
     t.decimal "latitude", precision: 10, scale: 6
     t.decimal "longitude", precision: 10, scale: 6
     t.string "mac_address"
+    t.integer "merged_into_id"
     t.string "model"
     t.string "name"
     t.datetime "rachio_created_at"
@@ -28,6 +29,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_000004) do
     t.string "status"
     t.string "timezone"
     t.datetime "updated_at", null: false
+    t.index ["merged_into_id"], name: "index_controllers_on_merged_into_id"
     t.index ["rachio_id"], name: "index_controllers_on_rachio_id", unique: true
   end
 
@@ -39,6 +41,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_000004) do
     t.datetime "occurred_at", null: false
     t.string "rachio_id", null: false
     t.json "raw"
+    t.integer "source_controller_id"
+    t.integer "source_zone_id"
     t.string "sub_type"
     t.text "summary"
     t.datetime "updated_at", null: false
@@ -47,6 +51,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_000004) do
     t.index ["controller_id"], name: "index_events_on_controller_id"
     t.index ["event_type"], name: "index_events_on_event_type"
     t.index ["rachio_id"], name: "index_events_on_rachio_id", unique: true
+    t.index ["source_controller_id"], name: "index_events_on_source_controller_id"
     t.index ["zone_id", "occurred_at"], name: "index_events_on_zone_id_and_occurred_at"
     t.index ["zone_id"], name: "index_events_on_zone_id"
   end
@@ -73,6 +78,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_000004) do
     t.index ["rachio_id"], name: "index_zones_on_rachio_id", unique: true
   end
 
+  add_foreign_key "controllers", "controllers", column: "merged_into_id"
   add_foreign_key "events", "controllers"
   add_foreign_key "events", "zones"
   add_foreign_key "zone_aliases", "zones"

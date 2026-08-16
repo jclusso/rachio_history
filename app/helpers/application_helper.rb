@@ -34,6 +34,41 @@ module ApplicationHelper
     end
   end
 
+  # Zone numbers sit immediately left of long zone names. A fixed-width,
+  # right-aligned slot keeps them lining up in a column and stops them reading
+  # as the first word of the name.
+  def zone_number_badge(number)
+    tag.span number, class: "mr-3 inline-block w-5 text-right tabular-nums text-gray-400"
+  end
+
+  # Label/value rows for the device cards. The label is set in the same small
+  # uppercase grey as the section headings so it reads as a label rather than
+  # as the first word of the value.
+  def detail_row(label, value)
+    tag.div class: "flex gap-3" do
+      tag.dt(label, class: "w-24 shrink-0 pt-px text-xs font-semibold uppercase tracking-wider text-gray-400") +
+        tag.dd(value.presence || "—", class: "font-medium text-gray-800")
+    end
+  end
+
+  # One-line hardware summary, shown on hover rather than taking up a line of
+  # its own under the controller name.
+  def device_summary(controller)
+    [
+      controller.model,
+      ("activated #{controller.rachio_created_at.to_date.strftime('%b %-d, %Y')}" if controller.rachio_created_at),
+      ("includes history merged from #{controller.predecessors.map(&:name).to_sentence}" if controller.predecessors.any?)
+    ].compact_blank.join(" · ")
+  end
+
+  # The window a controller has history for, e.g. "Jul 20, 2025 – Jul 18, 2026".
+  def event_span(controller)
+    first, last = controller.events.pick(Arel.sql("MIN(occurred_at), MAX(occurred_at)"))
+    return "no events" if first.blank?
+
+    [ first, last ].map { |time| time.to_date.strftime("%b %-d, %Y") }.uniq.join(" – ")
+  end
+
   def duration_in_words(seconds)
     return "-" if seconds.to_i.zero?
     minutes = seconds.to_i / 60

@@ -1,0 +1,138 @@
+<%# Subscribed so a running backfill's progress ticks up on this page too. %>
+<%= turbo_stream_from @controller %>
+
+<p class="mb-4 text-sm"><%= link_to "← #{@controller.name}", @controller, class: "text-emerald-700 hover:text-emerald-800 hover:underline" %></p>
+
+<h1 class="mb-6 text-2xl font-bold tracking-tight">Manage <%= @controller.name %></h1>
+
+<% if notice %><p class="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"><%= notice %></p><% end %>
+<% if alert %><p class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"><%= alert %></p><% end %>
+
+<div class="mb-6 rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+  <h2 class="mb-3 text-lg font-semibold">Device</h2>
+  <dl class="grid grid-cols-1 gap-x-10 gap-y-1.5 text-sm sm:grid-cols-2">
+    <%= detail_row "Model", @controller.model %>
+    <%= detail_row "Status", @controller.status&.downcase&.capitalize %>
+    <%= detail_row "Serial", @controller.serial_number %>
+    <%= detail_row "MAC", @controller.mac_address %>
+    <%= detail_row "Time zone", @controller.timezone %>
+    <%= detail_row "Activated", @controller.rachio_created_at&.to_date&.strftime("%b %-d, %Y") %>
+    <%= detail_row "History", event_span(@controller) %>
+    <%= detail_row "Last sync", @controller.last_synced_at ? "#{time_ago_in_words(@controller.last_synced_at)} ago" : "never" %>
+    <%= detail_row "Device ID", @controller.rachio_id %>
+  </dl>
+</div>
+
+<div class="mb-6 rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+  <h2 class="text-lg font-semibold">Fetch history from Rachio</h2>
+  <p class="mb-4 mt-1 max-w-3xl text-sm text-gray-600">
+    Syncing pulls anything new since the last event on record. A full backfill walks all the way back to
+    <%= @controller.rachio_created_at&.to_date&.strftime("%b %-d, %Y") || "the beginning" %> in 28-day windows — it takes a while and
+    eats into Rachio's daily request limit, so reach for it after adding a controller rather than routinely.
+  </p>
+
+  <% if @controller.backfilling? %>
+    <p class="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+      Backfilling history… <%= @controller.backfill_progress %>% (fetched back to <%= @controller.backfill_cursor_at&.to_date || "now" %>)
+    </p>
+  <% end %>
+
+  <div class="flex flex-wrap items-center gap-2">
+    <%= button_to "Sync recent", sync_controller_path(@controller), class: "rounded-md bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 cursor-pointer" %>
+    <%= button_to "Backfill full history", backfill_controller_path(@controller), class: "rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 cursor-pointer",
+          data: { turbo_confirm: "Pull all history back to #{@controller.rachio_created_at&.to_date || 'the beginning'}?" } %>
+  </div>
+</div>
+
+<%# Orphaned history first: it is the only item here that is a data problem
+    rather than a deliberate action, and the counts above are wrong until it
+    is resolved. %>
+<div class="mb-6 rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+  <h2 class="text-lg font-semibold">Unmatched zone names</h2>
+  <% if @unmatched_labels.any? %>
+    <p class="mb-4 mt-1 max-w-3xl text-sm text-gray-600">These names appear in historical events but don't match any current zone — usually a zone that was renamed or deleted. Assign each to a zone to reunite its history.</p>
+    <div class="overflow-x-auto rounded-lg border border-amber-200 bg-amber-50/40">
+      <table class="min-w-full divide-y divide-amber-100 text-sm">
+        <tbody class="divide-y divide-amber-100">
+          <% @unmatched_labels.each do |label, count| %>
+            <tr>
+              <td class="px-4 py-2.5 font-medium"><%= link_to label, history_controller_path(@controller, label: label), class: "text-emerald-700 hover:text-emerald-800 hover:underline", title: "View these events with run durations" %></td>
+              <td class="px-4 py-2.5 whitespace-nowrap text-gray-500"><%= number_with_delimiter(count) %> events</td>
+              <td class="px-4 py-2.5">
+                <%= form_with url: claim_zone_label_controller_path(@controller), class: "flex items-center gap-2" do |form| %>
+                  <%= form.hidden_field :label, value: label %>
+                  <%= form.select :zone_id, options_from_collection_for_select(@zones, :id, :name),
+                        { include_blank: "Assign to zone…" }, required: true, class: "rounded-md border border-gray-300 bg-white px-2 py-1 text-sm shadow-sm" %>
+                  <%= form.submit "Link", class: "rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 cursor-pointer" %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="mt-1 text-sm text-gray-500">Every run on this controller is linked to a zone — nothing to reconcile.</p>
+  <% end %>
+</div>
+
+<% if @controller.predecessors.any? %>
+  <div class="mb-6 rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+    <h2 class="text-lg font-semibold">Merged history</h2>
+    <p class="mb-4 mt-1 text-sm text-gray-600">Retired controllers whose history now lives on this one. Undoing a merge moves every one of those events back to the original device.</p>
+    <ul class="divide-y divide-gray-100">
+      <% @controller.predecessors.each do |predecessor| %>
+        <li class="flex flex-wrap items-center justify-between gap-3 py-2.5 text-sm">
+          <div>
+            <span class="font-medium text-gray-800"><%= predecessor.name %></span>
+            <span class="text-gray-500">· <%= predecessor.model %> · <%= event_span(predecessor) %></span>
+          </div>
+          <div class="ml-auto flex items-center gap-3">
+            <span class="whitespace-nowrap text-gray-400"><%= number_with_delimiter predecessor.merged_events_count %> events</span>
+            <%= button_to "Undo merge", controller_merge_path(predecessor), method: :delete,
+                  class: "cursor-pointer rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50",
+                  data: { turbo_confirm: "Move #{number_with_delimiter predecessor.merged_events_count} events back to #{predecessor.name}?" } %>
+          </div>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<% if @controller.merge_candidates.any? %>
+  <div class="mb-6 rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+    <h2 class="text-lg font-semibold">Replaced by a newer controller?</h2>
+    <p class="mb-4 mt-1 max-w-3xl text-sm text-gray-600">
+      Swapping in a new box splits a yard's history across two controllers. Merging moves all
+      <%= number_with_delimiter @controller.events.count %> events here onto the device that took over and re-links them to its
+      zones, so the heatmap and totals read as one unbroken record. You will see exactly how the zones pair up before anything moves, and the merge can be undone afterwards.
+    </p>
+    <%= form_with url: new_controller_merge_path(@controller), method: :get, class: "flex flex-wrap items-center gap-2" do |form| %>
+      <%= form.select :successor_id, options_from_collection_for_select(@controller.merge_candidates, :id, :name),
+            { include_blank: "Merge this history into…" }, required: true,
+            class: "rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500" %>
+      <%= form.submit "Preview merge", class: "rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 cursor-pointer" %>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="rounded-lg border border-red-200 bg-white p-5 shadow-sm">
+  <h2 class="text-lg font-semibold text-red-700">Remove controller</h2>
+  <% if @controller.predecessors.any? %>
+    <p class="mt-1 max-w-3xl text-sm text-gray-600">
+      This controller can't be removed while it holds history merged from <%= @controller.predecessors.map(&:name).to_sentence %> —
+      deleting it would take those events with it. Undo the merge above first.
+    </p>
+  <% else %>
+    <p class="mb-4 mt-1 max-w-3xl text-sm text-gray-600">
+      Deletes the controller, its zones and all <%= number_with_delimiter @controller.events.count %> of its events.
+      Rachio only keeps about a year of history, so anything backfilled beyond that window is gone for good. There is no undo.
+    </p>
+    <%= button_to "Remove this controller and all its history",
+          @controller,
+          method: :delete,
+          form_class: "inline",
+          data: { turbo_confirm: "Remove #{@controller.name.presence || @controller.rachio_id} and all #{number_with_delimiter(@controller.events.count)} of its events? This cannot be undone." },
+          class: "rounded-md border border-red-300 bg-white px-3.5 py-2 text-sm font-semibold text-red-700 shadow-sm hover:bg-red-50 cursor-pointer" %>
+  <% end %>
+</div>

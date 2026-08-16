@@ -39,3 +39,46 @@
     </table>
   </div>
 <% end %>
+
+<%# Replaced hardware is a footnote, not part of the list you came to read, so
+    it stays folded away behind a count until asked for. %>
+<% if @retired.any? %>
+  <div class="mt-3">
+    <% if params[:show_retired].present? %>
+      <%= link_to "Hide retired controllers", controllers_path, class: "text-sm text-gray-500 hover:text-emerald-700 hover:underline" %>
+    <% else %>
+      <%= link_to "Show #{@retired.count} retired #{'controller'.pluralize(@retired.count)}", controllers_path(show_retired: 1), class: "text-sm text-gray-500 hover:text-emerald-700 hover:underline" %>
+    <% end %>
+  </div>
+<% end %>
+
+<% if @retired.any? && params[:show_retired].present? %>
+  <p class="mb-3 mt-4 text-sm text-gray-600">Devices that have been replaced. Their history lives on the controller that took over — open that controller to browse it or undo the merge.</p>
+  <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Name</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Model</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Serial</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">In service</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">History merged into</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <% @retired.each do |controller| %>
+          <tr class="odd:bg-white even:bg-gray-50 text-gray-500">
+            <td class="px-4 py-3 font-medium text-gray-700"><%= controller.name.presence || controller.rachio_id %></td>
+            <td class="px-4 py-3"><%= controller.model %></td>
+            <td class="px-4 py-3"><%= controller.serial_number.presence || "—" %></td>
+            <td class="px-4 py-3 whitespace-nowrap"><%= controller.rachio_created_at&.to_date&.strftime("%b %Y") || "—" %></td>
+            <td class="px-4 py-3">
+              <%= link_to controller.merged_into.name, controller.merged_into, class: "font-medium text-emerald-700 hover:text-emerald-800 hover:underline" %>
+              <span class="text-gray-400">(<%= number_with_delimiter controller.merged_events_count %> events)</span>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

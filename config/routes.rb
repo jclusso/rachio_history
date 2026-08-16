@@ -2,10 +2,14 @@ Rails.application.routes.draw do
   root "controllers#index"
 
   resources :controllers, only: [ :index, :show, :new, :create, :destroy ] do
+    # new: preview the merge, create: perform it, destroy: undo it.
+    resource :merge, only: [ :new, :create, :destroy ], controller: "merges"
+
     member do
       post :sync
       post :backfill
       post :claim_zone_label
+      get :manage
       get :history
       get :calendar
       get :day

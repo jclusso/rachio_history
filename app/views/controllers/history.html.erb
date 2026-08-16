@@ -5,7 +5,7 @@
 <% if params[:label].present? %>
   <p class="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
     Showing events for former zone name “<%= params[:label] %>” — check the run durations against your zones, then assign it from the
-    <%= link_to "controller page", controller_path(@controller), class: "font-semibold underline" %>.
+    <%= link_to "manage page", manage_controller_path(@controller), class: "font-semibold underline" %>.
   </p>
 <% end %>
 

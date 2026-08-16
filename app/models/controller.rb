@@ -2,6 +2,7 @@ class Controller < ApplicationRecord
   include RachioSyncable
   include EventIngestible
   include Backfillable
+  include Mergeable
   include WateringStats
 
   has_many :zones, dependent: :destroy

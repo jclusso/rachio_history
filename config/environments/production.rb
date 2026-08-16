@@ -53,6 +53,10 @@ Rails.application.configure do
   config.active_job.queue_adapter = :solid_queue
   config.solid_queue.connects_to = { database: { writing: :queue } }
 
+  # This app is only reachable on the private network, so skip the basic auth
+  # prompt that Mission Control puts in front of /jobs by default.
+  config.mission_control.jobs.http_basic_auth_enabled = false
+
   # Ignore bad email addresses and do not raise email delivery errors.
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
   # config.action_mailer.raise_delivery_errors = false

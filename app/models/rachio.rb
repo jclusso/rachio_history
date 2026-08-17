@@ -1,6 +1,6 @@
 # Thin wrapper around the Rachio public API (https://rachio.readme.io).
-# Reads the API key from Rails credentials: `rachio: { api_key: ... }`
-# or a top-level `rachio_api_key`.
+# The API key is configured in the app and stored encrypted in the database,
+# not in Rails credentials — see Setting.
 module Rachio
   BASE_URL = "https://api.rach.io/1/public".freeze
 
@@ -21,8 +21,8 @@ module Rachio
 
   class << self
     def api_key
-      Rails.application.credentials.dig(:rachio, :api_key) ||
-        raise(Error, "Rachio API key missing from Rails credentials")
+      Setting.current.rachio_api_key.presence ||
+        raise(Error, "Rachio API key missing — add it under Settings")
     end
 
     def person_id

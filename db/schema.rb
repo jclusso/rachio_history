@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_16_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_17_000001) do
   create_table "controllers", force: :cascade do |t|
     t.datetime "backfill_completed_at"
     t.datetime "backfill_cursor_at"
@@ -54,6 +54,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_16_000001) do
     t.index ["source_controller_id"], name: "index_events_on_source_controller_id"
     t.index ["zone_id", "occurred_at"], name: "index_events_on_zone_id_and_occurred_at"
     t.index ["zone_id"], name: "index_events_on_zone_id"
+  end
+
+  create_table "settings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "rachio_api_key"
+    t.datetime "updated_at", null: false
   end
 
   create_table "zone_aliases", force: :cascade do |t|

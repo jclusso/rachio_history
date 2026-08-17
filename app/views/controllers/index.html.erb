@@ -6,6 +6,12 @@
   </div>
 </header>
 
+<% if @rachio_key_missing %>
+  <p class="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+    No Rachio API key configured yet, so syncing will fail. <%= link_to "Add one in Settings", settings_path, class: "font-semibold underline" %>.
+  </p>
+<% end %>
+
 <% if notice %><p class="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"><%= notice %></p><% end %>
 <% if alert %><p class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"><%= alert %></p><% end %>
 

@@ -22,6 +22,8 @@ Rails.application.routes.draw do
   resources :zones, only: :show
   resources :zone_aliases, only: :destroy
 
+  resource :settings, only: [ :show, :update ]
+
   mount MissionControl::Jobs::Engine, at: "/jobs"
 
   get "up" => "rails/health#show", as: :rails_health_check

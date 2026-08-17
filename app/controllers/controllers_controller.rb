@@ -5,6 +5,7 @@ class ControllersController < ApplicationController
   def index
     @controllers = Controller.active.order(:name)
     @retired = Controller.merged.includes(:merged_into).order(:name)
+    @rachio_key_missing = Setting.current.rachio_api_key.blank?
   end
 
   def show

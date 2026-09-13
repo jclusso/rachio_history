@@ -59,7 +59,7 @@ group :development do
   gem "web-console"
 end
 
-gem "mission_control-jobs", "~> 1.1"
+gem "mission_control-jobs", "~> 1.3"
 
 gem "httpx", "~> 1.8"
 

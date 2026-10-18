@@ -61,6 +61,6 @@ end
 
 gem "mission_control-jobs", "~> 1.1"
 
-gem "httpx", "~> 1.8"
+gem "httpx", "~> 1.9"
 
 gem "tailwindcss-rails", "~> 4.6"
